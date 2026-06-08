@@ -31,11 +31,16 @@
             color: var(--text-main);
             font-family: 'DM Sans', sans-serif;
             overflow-x: hidden;
-            cursor: none; /* Hides native cursor for premium rock cursor */
         }
 
-        a, button {
-            cursor: none; /* Forces custom cursor inheritance */
+        /* Desktop Safety Fallback for Cursor */
+        @media (min-width: 769px) {
+            body {
+                cursor: none; /* Only hide mouse on big screens if script is active */
+            }
+            a, button, .project-row {
+                cursor: none;
+            }
         }
 
         /* Asymmetric Editorial Grid */
@@ -49,18 +54,21 @@
             pointer-events: none;
         }
 
-        /* Hardware Accelerated Custom Rock Cursor Styles */
+        /* Stable Hardware-Accelerated Custom Rock Cursor */
         #rock-cursor {
             position: fixed;
+            top: 0;
+            left: 0;
             width: 16px;
             height: 20px;
             background-color: var(--text-main);
             pointer-events: none;
             z-index: 99999;
-            transform: translate(-50%, -50%);
             /* Asymmetric jagged polygon path mimicking a raw rock fragment */
             clip-path: polygon(30% 0%, 75% 15%, 100% 50%, 80% 85%, 40% 100%, 0% 70%, 10% 25%);
             transition: width 0.2s, height 0.2s, background-color 0.2s, clip-path 0.2s;
+            transform: translate3d(-50%, -50%, 0); /* Force GPU acceleration */
+            display: none; /* Hidden by default until mouse movement is verified */
             will-change: transform;
         }
 
@@ -191,6 +199,7 @@
 
         .project-row {
             display: flex;
+            justify-space: space-between;
             justify-content: space-between;
             align-items: center;
             padding: 32px 0;
@@ -366,32 +375,42 @@
 
     <!-- Hardcoded 3D WebGL WebEngine Math Setup Logic -->
     <script>
-        // Custom Cursor Coordinate Intercept Logic
+        // Stable Custom Cursor Tracking Logic with Safety Fallback
         const cursor = document.getElementById('rock-cursor');
-        let mouseX = 0, mouseY = 0;
-        let cursorX = 0, cursorY = 0;
+        let mouseX = window.innerWidth / 2;
+        let mouseY = window.innerHeight / 2;
+        let cursorX = mouseX;
+        let cursorY = mouseY;
+        let mouseMoved = false;
 
         window.addEventListener('mousemove', (e) => {
+            if (!mouseMoved) {
+                mouseMoved = true;
+                cursor.style.display = 'block'; // Only reveal rock cursor once mouse actually moves
+            }
             mouseX = e.clientX;
             mouseY = e.clientY;
         });
 
-        // Add Hover classes to track links
-        document.querySelectorAll('a, [role="button"]').forEach(link => {
-            link.addEventListener('mouseenter', () => cursor.classList.add('cursor-hover'));
-            link.addEventListener('mouseleave', () => cursor.classList.remove('cursor-hover'));
-        });
+        // Safe Hover bindings for active portfolio links
+        function initHoverStates() {
+            document.querySelectorAll('a, .project-row').forEach(link => {
+                link.addEventListener('mouseenter', () => cursor.classList.add('cursor-hover'));
+                link.addEventListener('mouseleave', () => cursor.classList.remove('cursor-hover'));
+            });
+        }
+        initHoverStates();
 
-        // Spatial Orbital Coordinates Matrix variables for 3D system dampening
+        // Spatial Orbital Coordinates Matrix for 3D System
         let targetX = 0, targetY = 0;
 
         // THREE.JS Engine Execution Code Block
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
         
-        // Setup Camera with explicit tracking dimensions matching viewport space
+        // Setup Camera with rigid aspect mapping to prevent desktop stretching
         const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-        camera.position.set(0, 5, 15);
+        camera.position.set(0, 4, 12);
         camera.lookAt(0, 1, 0);
 
         const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
@@ -399,108 +418,102 @@
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         container.appendChild(renderer.domElement);
 
-        // Studio Structural Ambient and Directional Lighting setup
-        const ambientLight = new THREE.AmbientLight(0xF2EDE4, 0.6);
+        // Lighting Matrix
+        const ambientLight = new THREE.AmbientLight(0xF2EDE4, 0.7);
         scene.add(ambientLight);
 
-        const directionalLight = new THREE.DirectionalLight(0xFFFFFF, 0.8);
+        const directionalLight = new THREE.DirectionalLight(0xFFFFFF, 0.9);
         directionalLight.position.set(5, 10, 7);
         scene.add(directionalLight);
 
-        // Core Group wrapper to execute mouse responsive orbital changes cleanly
         const rockGroup = new THREE.Group();
         scene.add(rockGroup);
 
-        // Procedural Low-Poly Peak Geometry Block Configuration
-        const rockGeo = new THREE.ConeGeometry(3, 4, 5); 
-        // Randomize vertex alignments programmatically to simulate jagged, physical travertine surfaces
+        // Procedural Mountain Peak Geometry
+        const rockGeo = new THREE.ConeGeometry(2.5, 3.5, 5); 
         const positionAttribute = rockGeo.attributes.position;
         for (let i = 0; i < positionAttribute.count; i++) {
             let x = positionAttribute.getX(i);
             let y = positionAttribute.getY(i);
             let z = positionAttribute.getZ(i);
-            
-            if(y < 2) { // Displace base points for organic roughness
-                positionAttribute.setX(i, x + (Math.random() - 0.5) * 0.4);
-                positionAttribute.setZ(i, z + (Math.random() - 0.5) * 0.4);
+            if(y < 1.5) { 
+                positionAttribute.setX(i, x + (Math.random() - 0.5) * 0.3);
+                positionAttribute.setZ(i, z + (Math.random() - 0.5) * 0.3);
             }
         }
         rockGeo.computeVertexNormals();
 
         const rockMat = new THREE.MeshPhysicalMaterial({
             color: 0x8C7B6E,
-            roughness: 0.9,
+            roughness: 0.85,
             metalness: 0.1,
-            flatShading: true // Highlights architectural edges cleanly inside daylight framework
+            flatShading: true 
         });
         const rockMesh = new THREE.Mesh(rockGeo, rockMat);
         rockMesh.position.y = -0.5;
         rockGroup.add(rockMesh);
 
-        // Procedural Matte-Charcoal MacBook Mockup Geometry Structure
+        // Procedural MacBook Mockup Structure
         const laptopGroup = new THREE.Group();
-        
-        // MacBook Base Chassis
-        const baseGeo = new THREE.BoxGeometry(3.5, 0.08, 2.4);
-        const matteCharcoalMat = new THREE.MeshStandardMaterial({ color: 0x1A1614, roughness: 0.5 });
+        const baseGeo = new THREE.BoxGeometry(3.2, 0.06, 2.2);
+        const matteCharcoalMat = new THREE.MeshStandardMaterial({ color: 0x1A1614, roughness: 0.6 });
         const baseMesh = new THREE.Mesh(baseGeo, matteCharcoalMat);
         laptopGroup.add(baseMesh);
 
-        // MacBook Screen Display Panel
-        const screenChassisGeo = new THREE.BoxGeometry(3.5, 2.3, 0.06);
+        const screenChassisGeo = new THREE.BoxGeometry(3.2, 2.1, 0.05);
         const screenChassis = new THREE.Mesh(screenChassisGeo, matteCharcoalMat);
-        screenChassis.position.set(0, 1.15, -1.18);
-        screenChassis.rotation.x = -0.1; // Slightly angled profile stance
+        screenChassis.position.set(0, 1.05, -1.08);
+        screenChassis.rotation.x = -0.08; 
         laptopGroup.add(screenChassis);
 
-        // Glowing Screen Core Face 
-        const displayGeo = new THREE.PlaneGeometry(3.3, 2.1);
-        const displayMat = new THREE.MeshBasicMaterial({ color: 0xE8E1D5 }); // Muted neutral screen face
+        const displayGeo = new THREE.PlaneGeometry(3.0, 1.9);
+        const displayMat = new THREE.MeshBasicMaterial({ color: 0xE8E1D5 }); 
         const displayMesh = new THREE.Mesh(displayGeo, displayMat);
-        displayMesh.position.set(0, 1.15, -1.14);
-        displayMesh.rotation.x = -0.1;
+        displayMesh.position.set(0, 1.05, -1.05);
+        displayMesh.rotation.x = -0.08;
         laptopGroup.add(displayMesh);
 
-        // Position MacBook beautifully right on top of the rock peak
-        laptopGroup.position.set(0, 1.6, 0);
-        laptopGroup.rotation.y = 0.4; // Elite offset presentation framing angle
+        laptopGroup.position.set(0, 1.3, 0);
+        laptopGroup.rotation.y = 0.35; 
         rockGroup.add(laptopGroup);
 
-        // Real-Time Vector Dampening Framework Animation Loop
         const clock = new THREE.Clock();
 
+        // Frame Rendering Loop
         function animate() {
             requestAnimationFrame(animate);
 
-            // Interpolate cursor coords to make rock movement smooth and fluid
-            cursorX += (mouseX - cursorX) * 0.15;
-            cursorY += (mouseY - cursorY) * 0.15;
-            cursor.style.left = `${cursorX}px`;
-            cursor.style.top = `${cursorY}px`;
+            // Smooth linear interpolation dampening for the cursor element
+            if (mouseMoved) {
+                cursorX += (mouseX - cursorX) * 0.2;
+                cursorY += (mouseY - cursorY) * 0.2;
+                cursor.style.transform = `translate3d(${cursorX}px, ${cursorY}px, 0)`;
+            }
 
-            // Transform viewport vector metrics to orbital degrees rotation coordinates
-            targetX = (mouseX / window.innerWidth - 0.5) * 0.5;
-            targetY = (mouseY / window.innerHeight - 0.5) * 0.3;
+            // Update orbital target math based on desktop mouse position
+            targetX = (mouseX / window.innerWidth - 0.5) * 0.4;
+            targetY = (mouseY / window.innerHeight - 0.5) * 0.2;
 
-            // Apply smooth linear interpolation dampening directly to 3D matrix objects
+            // Apply dampening to 3D elements rotation matrix
             rockGroup.rotation.y += (targetX - rockGroup.rotation.y) * 0.05;
             rockGroup.rotation.x += (targetY - rockGroup.rotation.x) * 0.05;
 
-            // Gentle systemic baseline idle movement
+            // Fluid floating idle animation
             const elapsedTime = clock.getElapsedTime();
-            rockGroup.position.y = Math.sin(elapsedTime * 0.5) * 0.12;
+            rockGroup.position.y = Math.sin(elapsedTime * 0.6) * 0.1;
 
             renderer.render(scene, camera);
         }
 
-        // Keep system completely scaling seamlessly on spatial window resizes
+        // Keep system responsive on desktop window resizing
         window.addEventListener('resize', () => {
-            camera.aspect = container.clientWidth / container.clientHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(container.clientWidth, container.clientHeight);
+            if(container.clientWidth > 0 && container.clientHeight > 0) {
+                camera.aspect = container.clientWidth / container.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(container.clientWidth, container.clientHeight);
+            }
         });
 
-        // Trigger loop execution engine
         animate();
     </script>
 </body>
