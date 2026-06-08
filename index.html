@@ -1,13 +1,507 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>My Google AI Studio App</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-</html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROVOCHÉ — Premium Web Design Studio</title>
+    <!-- Google Fonts Links -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    
+    <!-- Hardcoded HTTPS Three.js CDN Link to Guarantee GitHub Compatibility -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <style>
+        :root {
+            --bg-canvas: #F2EDE4;
+            --text-main: #1A1614;
+            --accent-burgundy: #5C1A1A;
+            --stone-grey: rgba(140, 123, 110, 0.15);
+        }
 
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-canvas);
+            color: var(--text-main);
+            font-family: 'DM Sans', sans-serif;
+            overflow-x: hidden;
+            cursor: none; /* Hides native cursor for premium rock cursor */
+        }
+
+        a, button {
+            cursor: none; /* Forces custom cursor inheritance */
+        }
+
+        /* Asymmetric Editorial Grid */
+        .grid-line-v {
+            position: fixed;
+            top: 0; bottom: 0;
+            left: 15vw;
+            width: 1px;
+            background-color: var(--stone-grey);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* Hardware Accelerated Custom Rock Cursor Styles */
+        #rock-cursor {
+            position: fixed;
+            width: 16px;
+            height: 20px;
+            background-color: var(--text-main);
+            pointer-events: none;
+            z-index: 99999;
+            transform: translate(-50%, -50%);
+            /* Asymmetric jagged polygon path mimicking a raw rock fragment */
+            clip-path: polygon(30% 0%, 75% 15%, 100% 50%, 80% 85%, 40% 100%, 0% 70%, 10% 25%);
+            transition: width 0.2s, height 0.2s, background-color 0.2s, clip-path 0.2s;
+            will-change: transform;
+        }
+
+        .cursor-hover {
+            width: 8px !important;
+            height: 8px !important;
+            background-color: var(--accent-burgundy) !important;
+            clip-path: none !important;
+            border-radius: 50%;
+        }
+
+        /* Navigation Layout */
+        nav {
+            position: absolute;
+            top: 0; left: 0; width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 40px 5vw;
+            z-index: 10;
+        }
+
+        .brand-logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 24px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 40px;
+        }
+
+        .nav-links a {
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.15em;
+            text-decoration: none;
+            color: var(--text-main);
+        }
+
+        /* Hero Layout Container */
+        .hero-section {
+            position: relative;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 0 5vw 0 15vw;
+        }
+
+        /* Procedural 3D Canvas Container */
+        #canvas-container {
+            position: absolute;
+            top: 0; right: 0;
+            width: 55vw;
+            height: 100vh;
+            z-index: 2;
+            pointer-events: none; /* Let clicks pass through to text links underneath */
+        }
+
+        .hero-text-container {
+            position: relative;
+            z-index: 3;
+            max-width: 45vw;
+        }
+
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 5vw;
+            font-weight: 400;
+            line-height: 1.1;
+            margin-bottom: 24px;
+            letter-spacing: -0.01em;
+        }
+
+        .hero-sub {
+            font-size: 14px;
+            line-height: 1.7;
+            color: var(--text-main);
+            opacity: 0.8;
+            max-width: 380px;
+        }
+
+        /* Editorial Index Sections */
+        .section-container {
+            position: relative;
+            padding: 120px 5vw 120px 15vw;
+            border-top: 1px solid var(--stone-grey);
+            z-index: 3;
+        }
+
+        .section-title-label {
+            font-size: 11px;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--accent-burgundy);
+            margin-bottom: 40px;
+            font-weight: 700;
+        }
+
+        .method-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 80px;
+        }
+
+        .method-block h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 24px;
+            font-weight: 400;
+            margin-bottom: 16px;
+        }
+
+        .method-block p {
+            font-size: 14px;
+            line-height: 1.7;
+            opacity: 0.7;
+        }
+
+        /* Minimalist Project Index List */
+        .project-list {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .project-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 32px 0;
+            border-bottom: 1px solid var(--stone-grey);
+            text-decoration: none;
+            color: var(--text-main);
+            transition: padding-left 0.4s ease;
+        }
+
+        .project-row:hover {
+            padding-left: 24px;
+            color: var(--accent-burgundy);
+        }
+
+        .proj-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 28px;
+        }
+
+        .proj-meta {
+            font-size: 12px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            opacity: 0.6;
+        }
+
+        .about-text {
+            font-family: 'Playfair Display', serif;
+            font-size: 32px;
+            line-height: 1.4;
+            max-width: 75vw;
+        }
+
+        .about-founder-label {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-top: 32px;
+            opacity: 0.6;
+        }
+
+        /* Contact & Footer Layout */
+        .contact-section {
+            padding: 160px 5vw 60px 15vw;
+            display: flex;
+            flex-direction: column;
+            gap: 100px;
+        }
+
+        .cta-mail {
+            font-family: 'Playfair Display', serif;
+            font-size: 6vw;
+            color: var(--accent-burgundy);
+            text-decoration: none;
+            transition: opacity 0.3s;
+        }
+
+        .cta-mail:hover {
+            opacity: 0.7;
+        }
+
+        footer {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            opacity: 0.5;
+            padding-top: 40px;
+            border-top: 1px solid var(--stone-grey);
+        }
+
+        /* Mobile Scale Overrides */
+        @media (max-width: 768px) {
+            body { cursor: auto; }
+            #rock-cursor { display: none; }
+            .grid-line-v { left: 8vw; }
+            .hero-section { padding-left: 8vw; justify-content: flex-start; padding-top: 160px; }
+            #canvas-container { position: relative; width: 100vw; height: 50vh; order: -1; }
+            .hero-text-container { max-width: 100%; }
+            h1 { font-size: 10vw; }
+            .method-grid { grid-template-columns: 1fr; gap: 40px; }
+            .section-container { padding-left: 8vw; }
+            .contact-section { padding-left: 8vw; }
+            .project-row { flex-direction: column; align-items: flex-start; gap: 8px; }
+            .about-text { font-size: 22px; max-width: 100%; }
+            footer { flex-direction: column; gap: 16px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="grid-line-v"></div>
+    <div id="rock-cursor"></div>
+
+    <nav>
+        <div class="brand-logo">ROVOCHÉ</div>
+        <div class="nav-links">
+            <a href="#work">WORK</a>
+            <a href="#contact">CONTACT</a>
+        </div>
+    </nav>
+
+    <section class="hero-section">
+        <div id="canvas-container"></div>
+        <div class="hero-text-container">
+            <h1>Digital presence,<br>crafted on solid ground.</h1>
+            <p class="hero-sub">Bespoke web architecture for brands that demand distinction. From Lagos to the world stage.</p>
+        </div>
+    </section>
+
+    <section class="section-container">
+        <div class="section-title-label">01 / THE METHOD</div>
+        <div class="method-grid">
+            <div class="method-block">
+                <h3>Architecture</h3>
+                <p>We map the strategy and information hierarchy before a single element is designed. Form follows strategy.</p>
+            </div>
+            <div class="method-block">
+                <h3>Precision Craft</h3>
+                <p>Hand-crafted directly in code. No templates. No shortcuts. Pixel-precise on every screen.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="section-container" id="work">
+        <div class="section-title-label">02 / SELECTED PORTFOLIO & DEMOS</div>
+        <div class="project-list">
+            <a href="https://rovoche.github.io/luxuryfashion/" target="_blank" class="project-row">
+                <span class="proj-name">Styledbylayo</span>
+                <span class="proj-meta">Luxury Fashion &bull; Concept Demo</span>
+            </a>
+            <a href="https://rovoche.github.io/Glam-and-Makeup/" target="_blank" class="project-row">
+                <span class="proj-name">Glamsbykiki</span>
+                <span class="proj-meta">Beauty Atelier &bull; Concept Demo</span>
+            </a>
+            <a href="https://twaynesafehaven.org" target="_blank" class="project-row">
+                <span class="proj-name">Twayne Safe Haven</span>
+                <span class="proj-meta">Community NGO &bull; Live Site</span>
+            </a>
+            <a href="https://peasis.com" target="_blank" class="project-row">
+                <span class="proj-name">Peasis</span>
+                <span class="proj-meta">Fashion & Couture &bull; Live Site</span>
+            </a>
+            <div class="project-row" style="opacity: 0.4; pointer-events: none;">
+                <span class="proj-name">Fine Jewellery & Ateliers</span>
+                <span class="proj-meta">Launches Next Phase</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="section-container">
+        <div class="section-title-label">03 / THE STUDIO</div>
+        <div class="about-text">
+            "A decade spent building organizations across Nigeria embedded a singular truth in my work: the difference between a brand people remember and one they scroll past lies entirely in how it is presented. ROVOCHÉ exists because premium brands deserve an unshakeable digital foundation."
+        </div>
+        <div class="about-founder-label">Sammie Friday — Founder & Creative Director</div>
+    </section>
+
+    <section class="section-container contact-section" id="contact">
+        <div>
+            <div class="section-title-label" style="margin-bottom: 20px;">PROJECT INTAKE</div>
+            <a href="mailto:hello@rovoche.com" class="cta-mail">hello@rovoche.com &rarr;</a>
+        </div>
+        
+        <footer>
+            <span>&copy; 2026 ROVOCHÉ</span>
+            <span>LAGOS &bull; LONDON &bull; NEW YORK</span>
+            <span>INFRASTRUCTURE ROOTED ON ROCK</span>
+        </footer>
+    </section>
+
+    <!-- Hardcoded 3D WebGL WebEngine Math Setup Logic -->
+    <script>
+        // Custom Cursor Coordinate Intercept Logic
+        const cursor = document.getElementById('rock-cursor');
+        let mouseX = 0, mouseY = 0;
+        let cursorX = 0, cursorY = 0;
+
+        window.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+
+        // Add Hover classes to track links
+        document.querySelectorAll('a, [role="button"]').forEach(link => {
+            link.addEventListener('mouseenter', () => cursor.classList.add('cursor-hover'));
+            link.addEventListener('mouseleave', () => cursor.classList.remove('cursor-hover'));
+        });
+
+        // Spatial Orbital Coordinates Matrix variables for 3D system dampening
+        let targetX = 0, targetY = 0;
+
+        // THREE.JS Engine Execution Code Block
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        
+        // Setup Camera with explicit tracking dimensions matching viewport space
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(0, 5, 15);
+        camera.lookAt(0, 1, 0);
+
+        const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        // Studio Structural Ambient and Directional Lighting setup
+        const ambientLight = new THREE.AmbientLight(0xF2EDE4, 0.6);
+        scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xFFFFFF, 0.8);
+        directionalLight.position.set(5, 10, 7);
+        scene.add(directionalLight);
+
+        // Core Group wrapper to execute mouse responsive orbital changes cleanly
+        const rockGroup = new THREE.Group();
+        scene.add(rockGroup);
+
+        // Procedural Low-Poly Peak Geometry Block Configuration
+        const rockGeo = new THREE.ConeGeometry(3, 4, 5); 
+        // Randomize vertex alignments programmatically to simulate jagged, physical travertine surfaces
+        const positionAttribute = rockGeo.attributes.position;
+        for (let i = 0; i < positionAttribute.count; i++) {
+            let x = positionAttribute.getX(i);
+            let y = positionAttribute.getY(i);
+            let z = positionAttribute.getZ(i);
+            
+            if(y < 2) { // Displace base points for organic roughness
+                positionAttribute.setX(i, x + (Math.random() - 0.5) * 0.4);
+                positionAttribute.setZ(i, z + (Math.random() - 0.5) * 0.4);
+            }
+        }
+        rockGeo.computeVertexNormals();
+
+        const rockMat = new THREE.MeshPhysicalMaterial({
+            color: 0x8C7B6E,
+            roughness: 0.9,
+            metalness: 0.1,
+            flatShading: true // Highlights architectural edges cleanly inside daylight framework
+        });
+        const rockMesh = new THREE.Mesh(rockGeo, rockMat);
+        rockMesh.position.y = -0.5;
+        rockGroup.add(rockMesh);
+
+        // Procedural Matte-Charcoal MacBook Mockup Geometry Structure
+        const laptopGroup = new THREE.Group();
+        
+        // MacBook Base Chassis
+        const baseGeo = new THREE.BoxGeometry(3.5, 0.08, 2.4);
+        const matteCharcoalMat = new THREE.MeshStandardMaterial({ color: 0x1A1614, roughness: 0.5 });
+        const baseMesh = new THREE.Mesh(baseGeo, matteCharcoalMat);
+        laptopGroup.add(baseMesh);
+
+        // MacBook Screen Display Panel
+        const screenChassisGeo = new THREE.BoxGeometry(3.5, 2.3, 0.06);
+        const screenChassis = new THREE.Mesh(screenChassisGeo, matteCharcoalMat);
+        screenChassis.position.set(0, 1.15, -1.18);
+        screenChassis.rotation.x = -0.1; // Slightly angled profile stance
+        laptopGroup.add(screenChassis);
+
+        // Glowing Screen Core Face 
+        const displayGeo = new THREE.PlaneGeometry(3.3, 2.1);
+        const displayMat = new THREE.MeshBasicMaterial({ color: 0xE8E1D5 }); // Muted neutral screen face
+        const displayMesh = new THREE.Mesh(displayGeo, displayMat);
+        displayMesh.position.set(0, 1.15, -1.14);
+        displayMesh.rotation.x = -0.1;
+        laptopGroup.add(displayMesh);
+
+        // Position MacBook beautifully right on top of the rock peak
+        laptopGroup.position.set(0, 1.6, 0);
+        laptopGroup.rotation.y = 0.4; // Elite offset presentation framing angle
+        rockGroup.add(laptopGroup);
+
+        // Real-Time Vector Dampening Framework Animation Loop
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Interpolate cursor coords to make rock movement smooth and fluid
+            cursorX += (mouseX - cursorX) * 0.15;
+            cursorY += (mouseY - cursorY) * 0.15;
+            cursor.style.left = `${cursorX}px`;
+            cursor.style.top = `${cursorY}px`;
+
+            // Transform viewport vector metrics to orbital degrees rotation coordinates
+            targetX = (mouseX / window.innerWidth - 0.5) * 0.5;
+            targetY = (mouseY / window.innerHeight - 0.5) * 0.3;
+
+            // Apply smooth linear interpolation dampening directly to 3D matrix objects
+            rockGroup.rotation.y += (targetX - rockGroup.rotation.y) * 0.05;
+            rockGroup.rotation.x += (targetY - rockGroup.rotation.x) * 0.05;
+
+            // Gentle systemic baseline idle movement
+            const elapsedTime = clock.getElapsedTime();
+            rockGroup.position.y = Math.sin(elapsedTime * 0.5) * 0.12;
+
+            renderer.render(scene, camera);
+        }
+
+        // Keep system completely scaling seamlessly on spatial window resizes
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // Trigger loop execution engine
+        animate();
+    </script>
+</body>
+</html>
